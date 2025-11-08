@@ -136,6 +136,15 @@ const Products = () => {
   };
 
   const getStatusBadge = (status) => {
+    // Handle undefined/null status
+    if (!status) {
+      return (
+        <Badge bg="secondary">
+          UNKNOWN
+        </Badge>
+      );
+    }
+    
     const statusClasses = {
       'ACTIVE': 'success',
       'DISCONTINUED': 'danger',

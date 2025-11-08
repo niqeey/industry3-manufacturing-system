@@ -1,5 +1,6 @@
 package com.industry3.manufacturing.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Min;
@@ -18,6 +19,7 @@ public class WorkOrder {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "product_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private Product product;
     
     @NotNull
@@ -54,6 +56,7 @@ public class WorkOrder {
     
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "assigned_operator_id")
+    @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
     private User assignedOperator;
     
     private String notes;

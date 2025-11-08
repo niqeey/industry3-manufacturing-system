@@ -122,15 +122,30 @@ const WorkOrders = () => {
     }
   };
 
-  const handleComplete = async (workOrderId, quantityOrdered) => {
-    const quantityCompleted = prompt(`Enter quantity completed (max: ${quantityOrdered}):`);
-    if (quantityCompleted && !isNaN(quantityCompleted)) {
+  const handleUpdateProgress = async (workOrderId, quantityOrdered, currentCompleted) => {
+    const quantityCompleted = prompt(
+      `Update quantity completed (current: ${currentCompleted || 0}, max: ${quantityOrdered}):`
+    );
+    if (quantityCompleted !== null && !isNaN(quantityCompleted)) {
+      const qty = parseInt(quantityCompleted);
+      if (qty < 0) {
+        setError('Quantity completed cannot be negative');
+        return;
+      }
+      if (qty > quantityOrdered) {
+        setError('Quantity completed cannot exceed quantity ordered');
+        return;
+      }
       try {
-        await workOrderAPI.complete(workOrderId, parseInt(quantityCompleted));
+        await workOrderAPI.complete(workOrderId, qty);
         loadData();
+        if (qty === quantityOrdered) {
+          setError(null); // Clear any previous errors
+          // Could show success message: Work order completed successfully
+        }
       } catch (err) {
-        console.error('Error completing work order:', err);
-        setError('Failed to complete work order');
+        console.error('Error updating work order progress:', err);
+        setError('Failed to update work order progress');
       }
     }
   };
@@ -149,6 +164,15 @@ const WorkOrders = () => {
   };
 
   const getStatusBadge = (status) => {
+    // Handle undefined/null status
+    if (!status) {
+      return (
+        <Badge bg="secondary">
+          UNKNOWN
+        </Badge>
+      );
+    }
+    
     const statusClasses = {
       'PLANNED': 'secondary',
       'IN_PROGRESS': 'primary',
@@ -291,9 +315,10 @@ const WorkOrders = () => {
                                   variant="outline-warning"
                                   size="sm"
                                   className="me-1"
-                                  onClick={() => handleComplete(workOrder.id, workOrder.quantityOrdered)}
+                                  title="Update Progress"
+                                  onClick={() => handleUpdateProgress(workOrder.id, workOrder.quantityOrdered, workOrder.quantityCompleted)}
                                 >
-                                  <i className="fas fa-check"></i>
+                                  <i className="fas fa-tasks"></i>
                                 </Button>
                               )}
                               {(workOrder.status === 'PLANNED' || workOrder.status === 'IN_PROGRESS') && (

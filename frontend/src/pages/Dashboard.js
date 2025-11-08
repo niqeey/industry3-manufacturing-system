@@ -20,35 +20,47 @@ const Dashboard = () => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Load work order counts
-      const [totalResponse, inProgressResponse, completedResponse, plannedResponse, workOrdersResponse] = await Promise.all([
-        workOrderAPI.getAll(),
-        workOrderAPI.getByStatus('IN_PROGRESS'),
-        workOrderAPI.getByStatus('COMPLETED'),
-        workOrderAPI.getByStatus('PLANNED'),
-        workOrderAPI.getActive()
-      ]);
+      // Load all work orders first
+      const allWorkOrdersResponse = await workOrderAPI.getAll();
+      const allWorkOrders = allWorkOrdersResponse.data;
+      
+      // Calculate metrics from all work orders
+      const totalWorkOrders = allWorkOrders.length;
+      const inProgressWorkOrders = allWorkOrders.filter(wo => wo.status === 'IN_PROGRESS').length;
+      const completedWorkOrders = allWorkOrders.filter(wo => wo.status === 'COMPLETED').length;
+      const plannedWorkOrders = allWorkOrders.filter(wo => wo.status === 'PLANNED').length;
 
       setMetrics({
-        totalWorkOrders: totalResponse.data.length,
-        inProgressWorkOrders: inProgressResponse.data.length,
-        completedWorkOrders: completedResponse.data.length,
-        plannedWorkOrders: plannedResponse.data.length
+        totalWorkOrders,
+        inProgressWorkOrders,
+        completedWorkOrders,
+        plannedWorkOrders
       });
 
       // Get recent work orders (last 10)
-      setRecentWorkOrders(workOrdersResponse.data.slice(0, 10));
+      setRecentWorkOrders(allWorkOrders.slice(0, 10));
 
     } catch (err) {
       console.error('Error loading dashboard data:', err);
-      setError('Failed to load dashboard data');
+      console.error('Error details:', err.response?.data || err.message);
+      setError(`Failed to load dashboard data: ${err.response?.data?.message || err.message}`);
     } finally {
       setLoading(false);
     }
   };
 
   const getStatusBadge = (status) => {
+    // Handle undefined/null status
+    if (!status) {
+      return (
+        <span className="badge bg-secondary">
+          UNKNOWN
+        </span>
+      );
+    }
+    
     const statusClasses = {
       'PLANNED': 'bg-secondary',
       'IN_PROGRESS': 'bg-primary',

@@ -4,10 +4,15 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import java.util.Arrays;
 
 @Configuration
 @EnableWebSecurity
@@ -17,6 +22,8 @@ public class SecurityConfig {
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
             .authorizeHttpRequests(authz -> authz
+                // Allow unrestricted access to API endpoints for development
+                .requestMatchers("/api/**").permitAll()
                 // Allow unrestricted access to Swagger UI and API docs
                 .requestMatchers(
                     "/swagger-ui/**",
@@ -25,26 +32,41 @@ public class SecurityConfig {
                     "/swagger-resources/**",
                     "/webjars/**"
                 ).permitAll()
-                // Allow unrestricted access to API endpoints for development
-                .requestMatchers("/api/**").permitAll()
                 // Allow access to actuator endpoints
                 .requestMatchers("/actuator/**").permitAll()
                 // Allow access to H2 database console (if used)
                 .requestMatchers("/h2-console/**").permitAll()
-                // Require authentication for all other requests
-                .anyRequest().authenticated()
+                // For development: allow all other requests too
+                .anyRequest().permitAll()
             )
             .csrf(AbstractHttpConfigurer::disable) // Disable CSRF for API testing
+            .cors(cors -> cors.configurationSource(corsConfigurationSource())) // Enable CORS
             .headers(headers -> headers
                 .frameOptions(frameOptions -> frameOptions.disable()) // Allow H2 console frames
             )
-            .formLogin(form -> form
-                .loginPage("/login")
-                .permitAll()
-            )
-            .logout(logout -> logout.permitAll());
+            // Disable form login for REST API - no redirects to /login
+            .formLogin(AbstractHttpConfigurer::disable)
+            .logout(AbstractHttpConfigurer::disable)
+            // Configure for stateless REST API
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            );
 
         return http.build();
+    }
+
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(Arrays.asList("http://localhost:3000", "http://127.0.0.1:3000"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/api/**", configuration);
+        return source;
     }
 
     @Bean

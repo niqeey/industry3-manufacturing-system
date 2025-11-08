@@ -112,9 +112,26 @@ public class WorkOrderService {
             throw new IllegalStateException("Work order must be in IN_PROGRESS status to complete");
         }
         
-        workOrder.setStatus(WorkOrder.WorkOrderStatus.COMPLETED);
-        workOrder.setActualEndDate(LocalDateTime.now());
+        // Validate quantity completed
+        if (quantityCompleted < 0) {
+            throw new IllegalArgumentException("Quantity completed cannot be negative");
+        }
+        
+        if (quantityCompleted > workOrder.getQuantityOrdered()) {
+            throw new IllegalArgumentException("Quantity completed cannot exceed quantity ordered");
+        }
+        
+        // Update quantity completed
         workOrder.setQuantityCompleted(quantityCompleted);
+        
+        // Only mark as completed if all items are done
+        if (quantityCompleted.equals(workOrder.getQuantityOrdered())) {
+            workOrder.setStatus(WorkOrder.WorkOrderStatus.COMPLETED);
+            workOrder.setActualEndDate(LocalDateTime.now());
+        } else {
+            // Keep status as IN_PROGRESS if not all items are completed
+            workOrder.setStatus(WorkOrder.WorkOrderStatus.IN_PROGRESS);
+        }
         
         return workOrderRepository.save(workOrder);
     }

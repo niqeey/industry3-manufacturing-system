@@ -1,0 +1,73 @@
+# Manufacturing System Configuration
+# This file contains application-specific configuration that can be customized per environment
+
+# Data Management Configuration
+app:
+  data:
+    # Enable/disable automatic data initialization
+    auto-initialize: false
+    
+    # Default system settings
+    defaults:
+      # Default admin user (only created if no users exist)
+      admin:
+        enabled: false  # Set to true only for initial setup
+        username: ${ADMIN_USERNAME:admin}
+        password: ${ADMIN_PASSWORD:}  # Must be provided via environment variable
+        email: ${ADMIN_EMAIL:admin@company.com}
+      
+      # Default warehouse settings
+      warehouse:
+        default-location: "Main Warehouse"
+        default-bin-prefix: "BIN-"
+      
+      # System limits and defaults
+      limits:
+        max-work-orders-per-user: 100
+        default-lead-time-days: 7
+        low-stock-threshold-percentage: 20
+
+  # Import/Export Configuration
+  import:
+    # Maximum file size for data imports
+    max-file-size: 10MB
+    
+    # Supported import formats
+    supported-formats:
+      - csv
+      - xlsx
+      - json
+    
+    # Import validation settings
+    validation:
+      strict-mode: true
+      skip-invalid-records: false
+
+# Integration Settings
+integration:
+  # ERP System Integration
+  erp:
+    enabled: false
+    endpoint: ${ERP_ENDPOINT:}
+    api-key: ${ERP_API_KEY:}
+  
+  # Warehouse Management System
+  wms:
+    enabled: false
+    endpoint: ${WMS_ENDPOINT:}
+    api-key: ${WMS_API_KEY:}
+
+# Security Settings
+security:
+  # Password policy
+  password:
+    min-length: 8
+    require-uppercase: true
+    require-lowercase: true
+    require-numbers: true
+    require-special-chars: false
+  
+  # Session settings
+  session:
+    timeout-minutes: 30
+    max-concurrent-sessions: 5
